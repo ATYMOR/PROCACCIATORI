@@ -21,14 +21,19 @@ def salva_docx(doc, filename):
     return path_docx
 
 # Converte in PDF con pypandoc
+import pypandoc
+
 def converti_pdf(path_docx):
     path_pdf = path_docx.replace(".docx", ".pdf")
     try:
         pypandoc.convert_file(source_file=path_docx, to='pdf', outputfile=path_pdf)
     except OSError:
+        # Descargar pandoc si no está instalado
         pypandoc.download_pandoc()
+        # Intentar la conversión nuevamente
         pypandoc.convert_file(source_file=path_docx, to='pdf', outputfile=path_pdf)
     return path_pdf
+
 
 
 st.title("📄 Generatore Contratto E-LUX (Word + PDF - Compatibile Deploy)")
