@@ -1,21 +1,19 @@
 import streamlit as st
 from fpdf import FPDF
 from datetime import date
-import tempfile
-import os
+import base64
+from io import BytesIO
 
-# 📄 Funzione per generare e salvare il PDF
-def genera_pdf(dati, nome_file):
+# 🧾 Funzione per generare PDF e restituirlo in memoria
+def genera_pdf(dati):
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_font("Arial", size=12)
-
     pdf.set_font("Arial", 'B', 14)
     pdf.cell(200, 10, "Contratto di Procacciamento d’Affari", ln=True, align='C')
     pdf.set_font("Arial", size=12)
     pdf.ln(10)
 
-    lines = [
+    righe = [
         f"Il sottoscritto {dati['NOME']} con sede in {dati['SEDE']},",
         f"via {dati['VIA']}, P.IVA {dati['PIVA']}, C.F. {dati['CF']},",
         "assume l’incarico di procacciatore d’affari per conto della società E-LUX Srl.",
@@ -30,16 +28,18 @@ def genera_pdf(dati, nome_file):
         "____________________________"
     ]
 
-    for line in lines:
-        # Conversione sicura per caratteri speciali
-        pdf.cell(200, 10, line.encode('latin-1', 'replace').decode('latin-1'), ln=True)
+    for linea in righe:
+        linea_sicura = linea.encode('latin-1', 'replace').decode('latin-1')
+        pdf.cell(200, 10, linea_sicura, ln=True)
 
-    temp_path = os.path.join(tempfile.gettempdir(), f"{nome_file}.pdf")
-    pdf.output(temp_path)
-    return temp_path
+    # Genera PDF in memoria (BytesIO)
+    buffer = BytesIO()
+    pdf.output(buffer)
+    pdf_bytes = buffer.getvalue()
+    return pdf_bytes
 
 # 🖥️ Interfaccia Streamlit
-st.title("📄 Generatore Contratto PDF - E-LUX")
+st.title("📄 Generatore Contratto PDF – FPDF")
 
 with st.form("form_contratto"):
     nome = st.text_input("Nome e Cognome")
@@ -65,13 +65,14 @@ if genera:
             "DATA": data
         }
 
-        file_path = genera_pdf(dati, nome.replace(" ", "_"))
-        with open(file_path, "rb") as f:
-            st.download_button(
-                label="📥 Scarica Contratto PDF",
-                data=f,
-                file_name=f"contratto_{nome.replace(' ', '_')}.pdf",
-                mime="application/pdf"
-            )
+        pdf = genera_pdf(dati)
+        st.success("✅ Contratto generato con successo!")
+
+        st.download_button(
+            label="📥 Scarica Contratto PDF",
+            data=pdf,
+            file_name=f"contratto_{nome.replace(' ', '_')}.pdf",
+            mime="application/pdf"
+        )
     else:
         st.warning("⚠️ Compila tutti i campi obbligatori.")
