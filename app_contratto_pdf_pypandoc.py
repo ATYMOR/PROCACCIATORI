@@ -5,7 +5,7 @@ import os
 import tempfile
 import pypandoc
 
-# Reemplaza i placeholder nel documento Word
+# Funzione per compilare i campi nel documento
 def compila_contratto(doc, dati):
     for par in doc.paragraphs:
         for key, value in dati.items():
@@ -13,32 +13,27 @@ def compila_contratto(doc, dati):
                 par.text = par.text.replace(f"{{{{{key}}}}}", str(value))
     return doc
 
-# Salva il file Word
+# Salva il documento Word temporaneamente
 def salva_docx(doc, filename):
     temp_dir = tempfile.gettempdir()
     path_docx = os.path.join(temp_dir, filename + ".docx")
     doc.save(path_docx)
     return path_docx
 
-# Converte in PDF con pypandoc
-import pypandoc
-
+# Converte il .docx in PDF usando pypandoc
 def converti_pdf(path_docx):
     path_pdf = path_docx.replace(".docx", ".pdf")
     try:
         pypandoc.convert_file(source_file=path_docx, to='pdf', outputfile=path_pdf)
     except OSError:
-        # Descargar pandoc si no está instalado
         pypandoc.download_pandoc()
-        # Intentar la conversión nuevamente
         pypandoc.convert_file(source_file=path_docx, to='pdf', outputfile=path_pdf)
     return path_pdf
 
+# Titolo applicazione
+st.title("📄 Generatore Contratto Procacciatore - E-LUX (Word + PDF)")
 
-
-st.title("📄 Generatore Contratto E-LUX (Word + PDF - Compatibile Deploy)")
-
-# Upload modello Word
+# Caricamento file modello
 template_file = st.file_uploader("📎 Carica il modello contratto (.docx)", type="docx")
 
 # Form input
@@ -74,17 +69,17 @@ if genera:
         doc = Document(template_file)
         doc = compila_contratto(doc, dati)
 
-        filename = f"contratto_{nome.replace(' ', '_')}"
-        path_docx = salva_docx(doc, filename)
+        base_filename = f"contratto_{nome.replace(' ', '_')}"
+        path_docx = salva_docx(doc, base_filename)
         path_pdf = converti_pdf(path_docx)
 
         st.success("✅ Contratto generato con successo!")
 
         with open(path_docx, "rb") as f:
-            st.download_button("📥 Scarica Word (.docx)", data=f, file_name=filename + ".docx")
+            st.download_button("📥 Scarica Word (.docx)", data=f, file_name=base_filename + ".docx")
 
         with open(path_pdf, "rb") as f:
-            st.download_button("📥 Scarica PDF (.pdf)", data=f, file_name=filename + ".pdf")
+            st.download_button("📥 Scarica PDF (.pdf)", data=f, file_name=base_filename + ".pdf")
 
         os.remove(path_docx)
         os.remove(path_pdf)
