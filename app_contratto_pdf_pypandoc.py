@@ -21,14 +21,19 @@ def salva_docx(doc, filename):
     return path_docx
 
 # Converte il .docx in PDF usando pypandoc
+import pypandoc
+
 def converti_pdf(path_docx):
     path_pdf = path_docx.replace(".docx", ".pdf")
     try:
         pypandoc.convert_file(source_file=path_docx, to='pdf', outputfile=path_pdf)
     except OSError:
+        # Scarica pandoc se non è installato
         pypandoc.download_pandoc()
+        # Riprova la conversione
         pypandoc.convert_file(source_file=path_docx, to='pdf', outputfile=path_pdf)
     return path_pdf
+
 
 # Titolo applicazione
 st.title("📄 Generatore Contratto Procacciatore - E-LUX (Word + PDF)")
