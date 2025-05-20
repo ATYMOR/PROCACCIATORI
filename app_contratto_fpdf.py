@@ -1,15 +1,18 @@
 import streamlit as st
 from fpdf import FPDF
 from datetime import date
-import base64
 from io import BytesIO
 
-# 🧾 Funzione per generare PDF e restituirlo in memoria
+# ✅ Codifica texto a latin1 con reemplazo de caracteres no válidos
+def latin1_safe(text):
+    return text.encode("latin-1", "replace").decode("latin-1")
+
+# 🧾 Genera PDF en memoria
 def genera_pdf(dati):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", 'B', 14)
-    pdf.cell(200, 10, "Contratto di Procacciamento d’Affari", ln=True, align='C')
+    pdf.cell(200, 10, latin1_safe("Contratto di Procacciamento d’Affari"), ln=True, align='C')
     pdf.set_font("Arial", size=12)
     pdf.ln(10)
 
@@ -29,17 +32,15 @@ def genera_pdf(dati):
     ]
 
     for linea in righe:
-        linea_sicura = linea.encode('latin-1', 'replace').decode('latin-1')
-        pdf.cell(200, 10, linea_sicura, ln=True)
+        pdf.cell(200, 10, latin1_safe(linea), ln=True)
 
-    # Genera PDF in memoria (BytesIO)
     buffer = BytesIO()
     pdf.output(buffer)
     pdf_bytes = buffer.getvalue()
     return pdf_bytes
 
 # 🖥️ Interfaccia Streamlit
-st.title("📄 Generatore Contratto PDF – FPDF")
+st.title("📄 Generatore Contratto PDF – E-LUX")
 
 with st.form("form_contratto"):
     nome = st.text_input("Nome e Cognome")
@@ -66,7 +67,6 @@ if genera:
         }
 
         pdf = genera_pdf(dati)
-        st.success("✅ Contratto generato con successo!")
 
         st.download_button(
             label="📥 Scarica Contratto PDF",
