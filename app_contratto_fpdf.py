@@ -1,14 +1,14 @@
 import streamlit as st
 from fpdf import FPDF
 from datetime import date
-from io import BytesIO
+import os
+import tempfile
 
-# ✅ Codifica texto a latin1 con reemplazo de caracteres no válidos
 def latin1_safe(text):
     return text.encode("latin-1", "replace").decode("latin-1")
 
-# 🧾 Genera PDF en memoria
-def genera_pdf(dati):
+# ✅ Genera PDF y lo guarda temporalmente como archivo
+def genera_pdf(dati, filename):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", 'B', 14)
@@ -34,13 +34,12 @@ def genera_pdf(dati):
     for linea in righe:
         pdf.cell(200, 10, latin1_safe(linea), ln=True)
 
-    buffer = BytesIO()
-    pdf.output(buffer)
-    pdf_bytes = buffer.getvalue()
-    return pdf_bytes
+    temp_path = os.path.join(tempfile.gettempdir(), f"{filename}.pdf")
+    pdf.output(temp_path)
+    return temp_path
 
-# 🖥️ Interfaccia Streamlit
-st.title("📄 Generatore Contratto PDF – E-LUX")
+# Interfaccia Streamlit
+st.title("📄 Generatore Contratto PDF – E-LUX (finale stabile)")
 
 with st.form("form_contratto"):
     nome = st.text_input("Nome e Cognome")
@@ -66,13 +65,15 @@ if genera:
             "DATA": data
         }
 
-        pdf = genera_pdf(dati)
+        nome_file = nome.replace(" ", "_")
+        path_pdf = genera_pdf(dati, nome_file)
 
-        st.download_button(
-            label="📥 Scarica Contratto PDF",
-            data=pdf,
-            file_name=f"contratto_{nome.replace(' ', '_')}.pdf",
-            mime="application/pdf"
-        )
+        with open(path_pdf, "rb") as f:
+            st.download_button(
+                label="📥 Scarica Contratto PDF",
+                data=f,
+                file_name=f"contratto_{nome_file}.pdf",
+                mime="application/pdf"
+            )
     else:
         st.warning("⚠️ Compila tutti i campi obbligatori.")
