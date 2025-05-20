@@ -1,10 +1,11 @@
 import streamlit as st
 from fpdf import FPDF
 from datetime import date
-import base64
+import tempfile
+import os
 
-# 📄 Funzione per generare il PDF
-def genera_pdf(dati):
+# 📄 Funzione per generare e salvare il PDF
+def genera_pdf(dati, nome_file):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", size=12)
@@ -30,12 +31,15 @@ def genera_pdf(dati):
     ]
 
     for line in lines:
-        pdf.cell(200, 10, line, ln=True)
+        # Conversione sicura per caratteri speciali
+        pdf.cell(200, 10, line.encode('latin-1', 'replace').decode('latin-1'), ln=True)
 
-    return pdf.output(dest='S').encode('latin1')
+    temp_path = os.path.join(tempfile.gettempdir(), f"{nome_file}.pdf")
+    pdf.output(temp_path)
+    return temp_path
 
-# 🖥️ Interfaccia utente
-st.title("📄 Generatore Contratto PDF (FPDF)")
+# 🖥️ Interfaccia Streamlit
+st.title("📄 Generatore Contratto PDF - E-LUX")
 
 with st.form("form_contratto"):
     nome = st.text_input("Nome e Cognome")
@@ -61,9 +65,13 @@ if genera:
             "DATA": data
         }
 
-        pdf_bytes = genera_pdf(dati)
-        b64 = base64.b64encode(pdf_bytes).decode()
-        href = f'<a href="data:application/pdf;base64,{b64}" download="contratto_{nome.replace(" ", "_")}.pdf">📥 Scarica Contratto PDF</a>'
-        st.markdown(href, unsafe_allow_html=True)
+        file_path = genera_pdf(dati, nome.replace(" ", "_"))
+        with open(file_path, "rb") as f:
+            st.download_button(
+                label="📥 Scarica Contratto PDF",
+                data=f,
+                file_name=f"contratto_{nome.replace(' ', '_')}.pdf",
+                mime="application/pdf"
+            )
     else:
         st.warning("⚠️ Compila tutti i campi obbligatori.")
